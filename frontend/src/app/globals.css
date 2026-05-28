@@ -1,47 +1,47 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f8fafc;
-  --foreground: #0f172a;
-  --card: #ffffff;
-  --card-foreground: #0f172a;
-  --popover: #ffffff;
-  --popover-foreground: #0f172a;
-  --primary: #0f766e;
-  --primary-foreground: #f8fafc;
-  --secondary: #f1f5f9;
-  --secondary-foreground: #0f172a;
-  --muted: #f1f5f9;
-  --muted-foreground: #64748b;
-  --accent: #14b8a6;
-  --accent-foreground: #0f172a;
-  --destructive: #ef4444;
-  --destructive-foreground: #f8fafc;
-  --border: #e2e8f0;
-  --input: #e2e8f0;
-  --ring: #0f766e;
-  --radius: 0.75rem;
-}
-
-.dark {
-  --background: #0f172a;
+  --background: #0b0f19;
   --foreground: #f8fafc;
-  --card: #1e293b;
+  --card: #111827;
   --card-foreground: #f8fafc;
-  --popover: #1e293b;
+  --popover: #111827;
   --popover-foreground: #f8fafc;
   --primary: #14b8a6;
   --primary-foreground: #0f172a;
-  --secondary: #334155;
+  --secondary: #1f2937;
   --secondary-foreground: #f8fafc;
-  --muted: #334155;
+  --muted: #1f2937;
   --muted-foreground: #94a3b8;
   --accent: #0f766e;
   --accent-foreground: #f8fafc;
   --destructive: #f87171;
   --destructive-foreground: #0f172a;
-  --border: #334155;
-  --input: #334155;
+  --border: #1f2937;
+  --input: #1f2937;
+  --ring: #14b8a6;
+  --radius: 0.75rem;
+}
+
+.dark {
+  --background: #0b0f19;
+  --foreground: #f8fafc;
+  --card: #111827;
+  --card-foreground: #f8fafc;
+  --popover: #111827;
+  --popover-foreground: #f8fafc;
+  --primary: #14b8a6;
+  --primary-foreground: #0f172a;
+  --secondary: #1f2937;
+  --secondary-foreground: #f8fafc;
+  --muted: #1f2937;
+  --muted-foreground: #94a3b8;
+  --accent: #0f766e;
+  --accent-foreground: #f8fafc;
+  --destructive: #f87171;
+  --destructive-foreground: #0f172a;
+  --border: #1f2937;
+  --input: #1f2937;
   --ring: #14b8a6;
 }
 
@@ -55,22 +55,49 @@ body {
 
 /* Custom premium styles */
 .glass {
-  background: rgba(255, 255, 255, 0.75);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(17, 24, 39, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .dark .glass {
-  background: rgba(30, 41, 59, 0.7);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(17, 24, 39, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .gradient-bg {
-  background: radial-gradient(circle at 10% 20%, rgba(20, 184, 166, 0.15) 0%, transparent 40%),
-              radial-gradient(circle at 90% 80%, rgba(15, 118, 110, 0.15) 0%, transparent 40%);
+  background: radial-gradient(circle at 10% 20%, rgba(20, 184, 166, 0.08) 0%, transparent 50%),
+              radial-gradient(circle at 90% 80%, rgba(15, 118, 110, 0.08) 0%, transparent 50%);
+}
+
+.text-xxs {
+  font-size: 0.65rem;
+  line-height: 0.85rem;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #0b0f19;
+}
+::-webkit-scrollbar-thumb {
+  background: #1f2937;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #14b8a6;
+}
+
+/* Custom selection */
+::selection {
+  background-color: rgba(20, 184, 166, 0.25);
+  color: #14b8a6;
 }
 
 .glow-btn {

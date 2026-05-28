@@ -49,10 +49,11 @@ app.get('/', (req, res) => {
 // which leaks details about database types, schema layout, and file paths.
 app.use((err, req, res, next) => {
   console.error('[CRITICAL-ERROR]:', err);
+  const isDev = process.env.NODE_ENV === 'development';
   res.status(500).json({
     message: 'An unexpected internal server error occurred!',
-    error: err.message,
-    stack: process.env.NODE_ENV === 'development' ? err.stack : undefined,
+    error: isDev ? err.message : 'Internal Server Error',
+    stack: isDev ? err.stack : undefined,
   });
 });
 

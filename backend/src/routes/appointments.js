@@ -18,40 +18,38 @@ router.get('/', authenticate, async (req, res) => {
     if (doctorId) where.doctorId = doctorId;
     if (status) where.status = status;
 
-    // Fetch core appointments
+    // Fetch core appointments with relation details in a single query
     const appointments = await prisma.appointment.findMany({
       where,
       orderBy: { appointmentDate: 'asc' },
+      include: {
+        patient: {
+          select: {
+            id: true,
+            name: true,
+            phoneNumber: true,
+            age: true,
+            medicalHistory: true,
+          },
+        },
+        doctor: {
+          select: {
+            id: true,
+            name: true,
+            specialization: true,
+          },
+        },
+      },
     });
-
-    const detailedAppointments = [];
-
-    // N+1 triggers here: For every single appointment, we perform two extra queries!
-    for (const app of appointments) {
-      console.log(`[N+1 DB QUERY] Fetching Patient (${app.patientId}) and Doctor (${app.doctorId}) for Appointment ${app.id}`);
-      
-      const patient = await prisma.patient.findUnique({
-        where: { id: app.patientId },
-      });
-
-      const doctor = await prisma.doctor.findUnique({
-        where: { id: app.doctorId },
-      });
-
-      detailedAppointments.push({
-        ...app,
-        patient: patient ? { id: patient.id, name: patient.name, phoneNumber: patient.phoneNumber, age: patient.age, medicalHistory: patient.medicalHistory } : null,
-        doctor: doctor ? { id: doctor.id, name: doctor.name, specialization: doctor.specialization } : null,
-      });
-    }
 
     res.json({
       success: true,
-      count: detailedAppointments.length,
-      appointments: detailedAppointments,
+      count: appointments.length,
+      appointments,
     });
   } catch (error) {
-    res.status(500).json({ error: 'Failed to retrieve appointments', details: error.message });
+    console.error('Failed to retrieve appointments:', error);
+    res.status(500).json({ error: 'Failed to retrieve appointments' });
   }
 });
 
@@ -103,7 +101,8 @@ router.post('/', authenticate, async (req, res) => {
       appointment,
     });
   } catch (error) {
-    res.status(500).json({ error: 'Failed to book appointment', details: error.message });
+    console.error('Failed to book appointment:', error);
+    res.status(500).json({ error: 'Failed to book appointment' });
   }
 });
 
@@ -124,7 +123,8 @@ router.patch('/:id', authenticate, async (req, res) => {
 
     res.json(updated);
   } catch (error) {
-    res.status(500).json({ error: 'Failed to update appointment', details: error.message });
+    console.error('Failed to update appointment:', error);
+    res.status(500).json({ error: 'Failed to update appointment' });
   }
 });
 

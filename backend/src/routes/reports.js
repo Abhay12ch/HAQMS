@@ -13,50 +13,53 @@ router.get('/doctor-stats', authenticate, async (req, res) => {
   try {
     const start = Date.now();
 
-    // 1. Fetch all doctors
-    const doctors = await prisma.doctor.findMany();
-    const reportData = [];
+    // 1. Fetch all doctors and stats in parallel
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
-    // 2. Loop through every doctor and query databases sequentially!
-    for (const doc of doctors) {
-      console.log(`[SLOW REPORT] Querying stats sequentially for doctor: ${doc.name}`);
-
-      // Count total appointments
-      const totalAppointments = await prisma.appointment.count({
-        where: { doctorId: doc.id },
-      });
-
-      // Count completed appointments
-      const completedAppointments = await prisma.appointment.count({
-        where: { doctorId: doc.id, status: 'COMPLETED' },
-      });
-
-      // Count cancelled appointments
-      const cancelledAppointments = await prisma.appointment.count({
-        where: { doctorId: doc.id, status: 'CANCELLED' },
-      });
-
-      // Fetch queue tokens count today
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const queueTokensCount = await prisma.queueToken.count({
+    const [doctors, appointmentStats, queueStats] = await Promise.all([
+      prisma.doctor.findMany(),
+      prisma.appointment.groupBy({
+        by: ['doctorId', 'status'],
+        _count: {
+          _all: true,
+        },
+      }),
+      prisma.queueToken.groupBy({
+        by: ['doctorId'],
         where: {
-          doctorId: doc.id,
           createdAt: { gte: today },
         },
-      });
+        _count: {
+          _all: true,
+        },
+      }),
+    ]);
 
-      // Calculate total potential revenue
-      const appointmentsList = await prisma.appointment.findMany({
-        where: { doctorId: doc.id, status: 'COMPLETED' },
-      });
-      const revenue = appointmentsList.length * doc.consultationFee;
+    // 2. Build lookup maps for fast O(1) access
+    const appMap = {};
+    appointmentStats.forEach(stat => {
+      if (!appMap[stat.doctorId]) {
+        appMap[stat.doctorId] = { PENDING: 0, COMPLETED: 0, CANCELLED: 0 };
+      }
+      appMap[stat.doctorId][stat.status] = stat._count._all;
+    });
 
-      // Add artifical wait to simulate load under scaled database
-      // "Ensures database connection doesn't drop" - junior dev comment
-      await new Promise(r => setTimeout(r, 80));
+    const queueMap = {};
+    queueStats.forEach(stat => {
+      queueMap[stat.doctorId] = stat._count._all;
+    });
 
-      reportData.push({
+    // 3. Compile report data
+    const reportData = doctors.map(doc => {
+      const docApps = appMap[doc.id] || { PENDING: 0, COMPLETED: 0, CANCELLED: 0 };
+      const totalAppointments = docApps.PENDING + docApps.COMPLETED + docApps.CANCELLED;
+      const completedAppointments = docApps.COMPLETED;
+      const cancelledAppointments = docApps.CANCELLED;
+      const todayQueueSize = queueMap[doc.id] || 0;
+      const revenue = completedAppointments * doc.consultationFee;
+
+      return {
         id: doc.id,
         name: doc.name,
         specialization: doc.specialization,
@@ -64,10 +67,10 @@ router.get('/doctor-stats', authenticate, async (req, res) => {
         totalAppointments,
         completedAppointments,
         cancelledAppointments,
-        todayQueueSize: queueTokensCount,
+        todayQueueSize,
         revenue,
-      });
-    }
+      };
+    });
 
     const durationMs = Date.now() - start;
 
@@ -77,7 +80,8 @@ router.get('/doctor-stats', authenticate, async (req, res) => {
       data: reportData,
     });
   } catch (error) {
-    res.status(500).json({ error: 'Failed to generate report', details: error.message });
+    console.error('Failed to generate doctor stats report:', error);
+    res.status(500).json({ error: 'Failed to generate report' });
   }
 });
 

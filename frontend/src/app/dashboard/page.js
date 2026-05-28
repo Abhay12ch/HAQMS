@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import Navbar from '@/components/common/Navbar';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { 
   Users, CalendarDays, Activity, Search, Sparkles, UserPlus, 
   Trash2, ClipboardList, TrendingUp, DollarSign, Award, Clock,
@@ -71,12 +72,23 @@ export default function Dashboard() {
   // RECEPTIONIST FUNCTIONS
   // ==========================================
   
+  // Debounce search state
+  const [debouncedSearch, setDebouncedSearch] = useState(patientSearch);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(patientSearch);
+    }, 500);
+
+    return () => clearTimeout(handler);
+  }, [patientSearch]);
+
   // Fetch Patients List
   const fetchPatients = async (page = 1) => {
     setPatientsLoading(true);
     try {
       // Inefficient memory pagination called from client
-      const res = await fetch(`${API_BASE_URL}/patients?page=${page}&limit=5&search=${patientSearch}&gender=${patientGender}`, {
+      const res = await fetch(`${API_BASE_URL}/patients?page=${page}&limit=5&search=${debouncedSearch}&gender=${patientGender}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await res.json();
@@ -100,7 +112,7 @@ export default function Dashboard() {
     if (user.role === 'RECEPTIONIST' || user.role === 'ADMIN') {
       fetchPatients(1);
     }
-  }, [patientSearch, patientGender]);
+  }, [debouncedSearch, patientGender]);
 
   // Fetch Doctors for booking drop-down
   const fetchDoctorsDropdown = async () => {
@@ -894,7 +906,7 @@ export default function Dashboard() {
                       without optional chaining! If medicalHistory is null (which is the case for Batman, Clark Kent, etc.),
                       this code throws: "Cannot read properties of null (reading 'toUpperCase')" and crashes the app! */}
                   <p className="text-slate-700 dark:text-slate-300 leading-5 text-sm font-semibold">
-                    {selectedPatientHistory.medicalHistory.toUpperCase()}
+                    {selectedPatientHistory.medicalHistory?.toUpperCase() || 'NO RECORDED CLINICAL HISTORY'}
                   </p>
                 </div>
 
