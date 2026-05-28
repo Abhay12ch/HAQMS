@@ -5,6 +5,16 @@ const dotenv = require('dotenv');
 // Load environment variables
 dotenv.config();
 
+if (!process.env.JWT_SECRET || process.env.JWT_SECRET === 'my-super-secret-secret-key-12345!!!') {
+  console.error('================================================================');
+  console.error('[CRITICAL SECURITY FAULT] JWT_SECRET environment variable is');
+  console.error('either missing or set to the insecure fallback default value!');
+  console.error('The application will exit to prevent cryptographic compromise.');
+  console.error('================================================================');
+  process.exit(1);
+}
+
+
 const authRoutes = require('./routes/auth');
 const patientRoutes = require('./routes/patients');
 const doctorRoutes = require('./routes/doctors');

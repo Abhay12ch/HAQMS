@@ -22,10 +22,9 @@ export default function Dashboard() {
     }
   }, [user]);
 
-  if (!user) return null;
-
   // Global State
-  const [activeTab, setActiveTab] = useState(user.role === 'ADMIN' ? 'reports' : user.role === 'RECEPTIONIST' ? 'patients' : 'appointments');
+  const [activeTab, setActiveTab] = useState(user?.role === 'ADMIN' ? 'reports' : user?.role === 'RECEPTIONIST' ? 'patients' : 'appointments');
+
 
   // ==========================================
   // STATE FOR RECEPTIONIST WORKFLOWS
@@ -109,9 +108,10 @@ export default function Dashboard() {
 
   // Trigger Patient List Fetch (Every keystroke trigger re-renders parent! - Performance bug)
   useEffect(() => {
-    if (user.role === 'RECEPTIONIST' || user.role === 'ADMIN') {
+    if (user?.role === 'RECEPTIONIST' || user?.role === 'ADMIN') {
       fetchPatients(1);
     }
+
   }, [debouncedSearch, patientGender]);
 
   // Fetch Doctors for booking drop-down
@@ -265,10 +265,10 @@ export default function Dashboard() {
   // DOCTOR WORKFLOW FUNCTIONS
   // ==========================================
   const fetchDoctorWorklist = async () => {
-    if (user.role !== 'DOCTOR') return;
+    if (user?.role !== 'DOCTOR') return;
     try {
       // Find matching doctor from doctors dropdown using user ID link
-      const matchedDoc = doctorsList.find(d => d.userId === user.id);
+      const matchedDoc = doctorsList.find(d => d.userId === user?.id);
       if (!matchedDoc) return;
 
       // 1. Fetch appointments for this doctor (N+1 database queries triggers inside server)
@@ -293,10 +293,11 @@ export default function Dashboard() {
   };
 
   useEffect(() => {
-    if (user.role === 'DOCTOR' && doctorsList.length > 0) {
+    if (user?.role === 'DOCTOR' && doctorsList.length > 0) {
       fetchDoctorWorklist();
     }
   }, [doctorsList]);
+
 
   // Update token status (WAITING -> CALLING -> COMPLETED / SKIPPED)
   const handleUpdateQueueStatus = async (tokenId, newStatus) => {
@@ -375,6 +376,8 @@ export default function Dashboard() {
       console.error(e);
     }
   };
+
+  if (!user) return null;
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -751,10 +754,10 @@ export default function Dashboard() {
               </p>
 
               <div className="space-y-6">
-                <div className="p-4 rounded-xl border border-teal-500/25 bg-teal-500/10 text-slate-700 dark:text-slate-300 text-xs leading-5">
-                  <strong>Token Generation Engine Note:</strong> Direct arrivals bypass appointments. The token engine automatically fetches the current days maximum token size and increments. 
-                  <span className="block mt-1 font-bold text-rose-500 uppercase tracking-wide">Warning: Vulnerable to check-in race conditions!</span>
+                <div className="p-4 rounded-xl border border-teal-500/20 bg-teal-500/5 text-slate-300 text-xs leading-5">
+                  <strong>Token Generation Engine:</strong> Direct arrivals bypass appointments. The token engine uses atomic operations within a **Serializable** database transaction wrapped in a robust conflict retry handler, ensuring complete concurrency protection against race conditions.
                 </div>
+
 
                 <div className="space-y-4 text-xs font-semibold text-slate-700 dark:text-slate-300">
                   <div>
@@ -1136,16 +1139,13 @@ export default function Dashboard() {
               </button>
             </div>
 
-            <div className="p-3 bg-rose-500/10 text-rose-500 text-xs rounded-lg border border-rose-500/20 font-semibold leading-5 flex gap-3">
-              <ShieldAlert className="h-5 w-5 shrink-0" />
+            <div className="p-3 bg-teal-500/10 text-teal-600 dark:text-teal-400 text-xs rounded-lg border border-teal-500/20 font-semibold leading-5 flex gap-3">
+              <CheckCircle className="h-5 w-5 shrink-0 text-teal-500" />
               <div>
-                <strong>SQL Vulnerability alert:</strong> This search executes raw interpolation: 
-                <code className="block bg-black/10 dark:bg-black/30 p-1.5 rounded mt-1 font-mono">
-                  SELECT * FROM &quot;Doctor&quot; WHERE name ILIKE &apos;%&#123;query&#125;%&apos;
-                </code>
-                Can be audited by inputting standard SQL injection strings to leak full user login lists.
+                <strong>Secured Query Engine:</strong> The search system has been refactored to utilize Prisma's safe parameterized query builder (`findMany`). Raw string interpolation has been completely removed to permanently eliminate SQL Injection vulnerabilities.
               </div>
             </div>
+
 
             {/* Doctors Result List */}
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

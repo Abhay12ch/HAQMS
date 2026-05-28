@@ -5,7 +5,11 @@ const { PrismaClient } = require('@prisma/client');
 
 const router = express.Router();
 const prisma = new PrismaClient();
-const JWT_SECRET = process.env.JWT_SECRET || 'my-super-secret-secret-key-12345!!!';
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET is missing from environment variables.');
+}
+
 
 // POST /api/auth/register
 router.post('/register', async (req, res) => {
@@ -18,6 +22,17 @@ router.post('/register', async (req, res) => {
     if (!email || !password || !name) {
       return res.status(400).json({ error: 'All fields are required' });
     }
+
+    // Secure payload validations
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ error: 'Please provide a valid email address.' });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({ error: 'Password must be at least 6 characters long.' });
+    }
+
 
     const existingUser = await prisma.user.findUnique({ where: { email } });
     if (existingUser) {
