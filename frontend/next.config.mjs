@@ -2,16 +2,15 @@ import path from 'path';
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  experimental: {
-    turbopack: {
-      // Restricts Turbopack to only scan the frontend directory, resolving workspace root warnings
-      root: '.',
-    },
-    turbo: {
-      resolveAlias: {
-        react: './node_modules/react',
-        'react-dom': './node_modules/react-dom',
-      }
+  // Restricts Turbopack to only scan the frontend directory, resolving workspace root warnings
+  turbopack: {
+    root: '.',
+  },
+  // Configures Turbopack aliases for React and React-DOM
+  turbo: {
+    resolveAlias: {
+      react: './node_modules/react',
+      'react-dom': './node_modules/react-dom',
     }
   },
   webpack: (config) => {
@@ -26,4 +25,5 @@ const nextConfig = {
 };
 
 export default nextConfig;
+
 
