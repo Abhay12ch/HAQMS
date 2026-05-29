@@ -2,3 +2,5 @@ node_modules
 backend/.env
 frontend/.env.local
 *.log
+.next/
+frontend/.next/
