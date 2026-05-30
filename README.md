@@ -1,56 +1,59 @@
-# HAQMS: Hospital Appointment & Queue Management System
+# HAQMS: Security-Hardened & Performance-Optimized Hospital Appointment & Queue Management System
 
-Welcome to **HAQMS (Hospital Appointment & Queue Management System)**. This is a fully functional, deliberately imperfect full-stack web application designed for engineering internship candidate evaluations. 
+Welcome to the production-ready **HAQMS (Hospital Appointment & Queue Management System)**. This repository was originally a deliberately vulnerable, slow, and unoptimized candidate codebase. It has been thoroughly audited, secured, and performance-optimized across five major engineering dimensions.
 
-Candidates are tasked with auditing the codebase to identify, debug, profile, secure, and optimize performance bottlenecks, memory leaks, concurrency issues, and security vulnerabilities.
+This version represents a highly reliable, concurrent, and secure full-stack architecture ready to coordinate patients, medical staff, and queue monitors in real time.
+
+> 🌐 **Live Production Link**: [HAQMS Portal (Vercel)](https://haqms-p7pl8eqzt-abhay-choudharys-projects-a85ba84e.vercel.app/)
 
 ---
 
-## 🛠️ Tech Stack
+## 🛠️ Tech Stack & Architecture
+
 - **Frontend**: Next.js (App Router, Tailwind CSS, Lucide icons, Context API)
-- **Backend**: Node.js + Express
-- **Database & ORM**: PostgreSQL + Prisma ORM
-- **Process Management**: Docker Compose (Optional local PostgreSQL helper)
+- **Backend**: Node.js + Express.js API Gateway
+- **Database**: PostgreSQL (Supabase Session Pooler integration with pgBouncer compatibilities)
+- **ORM**: Prisma ORM (Object-Relational Mapping & Migrations)
+- **State & Concurrency Control**: Atomic DB transactions (`Serializable` isolation) & index optimizations
 
 ---
 
-## 🚀 Getting Started & Setup
+## 🚀 Key Improvements & Audited Challenges
 
-Follow these steps to spin up the local development workspace:
+### 🔒 1. Production-Grade Security & Compliance Patches
+* **Cryptographic Credential Safety**: Removed raw user password logging (`auth.js`), preventing diagnostic log leakage.
+* **JWT Expiry Verification & Secret Signatures**: Hardened token signing with custom environment secrets, reduced JWT lifespan from a risky `365d` to a secure `24h` window, and masked internal JWT parser errors (`middleware/auth.js`).
+* **SQL Injection (SQLi) Prevention**: Replaced vulnerable raw dynamic queries (`$queryRawUnsafe`) in the physician search with Prisma's auto-parameterized and safe query builder (`doctors.js`).
+* **Role-Based Authorization Recovery**: Restored and validated commented-out admin-only endpoint guards (`authorizeAdminOnlyLegacy`) preventing authorization bypasses.
+* **Global Error Sanitization**: Configured backend error middlewares to mask detailed database stack traces from production clients to prevent environment enumeration.
 
-### 1. Auto-Install Dependencies
-Run the included workspace orchestrator bootstrap script to install packages in the root, frontend, and backend packages:
-```bash
-chmod +x setup.sh
-./setup.sh
-```
+### ⚡ 2. High-Concurrency & Backend Performance Optimizations
+* **N+1 Database Query Elimination**: Replaced resource-intensive looped sub-queries inside `appointments.js` with integrated database joins using Prisma relations (`include`).
+* **Async Event-Loop Concurrency**: Accelerated physician stats retrievals by batching sequential database lookups in a parallelized `Promise.all()` wrapper (`doctors.js`).
+* **O(N) Analytical Aggregations Refactored**: Replaced nested loops and artificial `80ms` delays in analytics pipelines (`reports.js`) with native SQL database aggregations (`groupBy` and `count`).
+* **Token Race Condition Mitigation**: Wrapped concurrent patient check-ins in a transaction (`$transaction`) with a `Serializable` isolation level (`queue.js`), guaranteeing strict token sequence increments and eliminating duplicate token hazards under peak loads.
 
-### 2. Launch the Database
-You need a running PostgreSQL server. If you have Docker installed, you can spin up the preconfigured container:
-```bash
-docker-compose up -d
-```
-Alternatively, configure your local PostgreSQL server and update the connection URL in `backend/.env`:
-```env
-DATABASE_URL="postgresql://<user>:<password>@localhost:5432/haqms?schema=public"
-```
+### 💾 3. Database Schema & Index Design
+* **Double-Booking Prevention Constraint**: Added a strict database-level unique constraint (`@@unique([doctorId, appointmentDate])`) to the `Appointment` model.
+* **Multi-Column Query Indexing**: Deployed optimal single and composite indexes:
+  - `Doctor`: `[department]`, `[specialization]`
+  - `Appointment`: `[doctorId, status]`, `[patientId]`
+  - `QueueToken`: `[doctorId, createdAt]`, `[status]`
+* **Database-Side Pagination**: Swapped high-memory in-app pagination arrays inside `patients.js` with high-speed, database-level paginated queries (`skip` and `take`).
 
-### 3. Deploy Schema & Seed Mock Data
-Apply Prisma schema migrations to the database and populate it with pre-built mock records (including administrative logins, medical histories, physician slots, and queue tokens):
-```bash
-npm run db:setup --prefix backend
-```
+### 🖥️ 4. React Memory & State Optimization
+* **Timer Polling Memory Leak Fix**: Added explicit timer clearups (`clearInterval(intervalId)`) to the Live Public Queue Board on component unmounts to prevent continuous thread bloat.
+* **Debounced Search Inputs**: Integrated a `500ms` debounce handler to doctor search fields, eliminating excessive browser re-renders and REST API spam on every keystroke.
+* **Anamnesis Null-Pointer Safety**: Protected clinical dashboards from crashing when reading empty medical records by enforcing optional chaining and fallback states.
 
-### 4. Boot Dev Servers
-Launch both the Next.js development client (port `3000`) and the Express API server (port `5000`) concurrently using:
-```bash
-npm run dev
-```
+### 🏗️ 5. Missing Feature Implementation
+* **Diagnostic History Portal**: Built and integrated the secure clinical records route `/patients/[id]/history-records` guarded with rigorous, role-based metadata validations to ensure only authorized physicians and administrators can view diagnostic details.
 
 ---
 
 ## 🔑 Pre-Seeded Accounts
-The database seed script populates the database with default accounts (All passwords are **`password123`**):
+
+The PostgreSQL seed script populates the database with default accounts (All passwords are **`password123`**):
 
 | Role | Email | Purpose / Flow Testing |
 |---|---|---|
@@ -60,39 +63,44 @@ The database seed script populates the database with default accounts (All passw
 
 ---
 
-## 🎯 Internship Evaluation Tasks
+## ⚙️ Quick Start & Setup
 
-As an internship candidate, your evaluation is divided into five core objectives:
+Ensure you have **Node.js (v18+)** and **PostgreSQL** installed.
 
-### 🔍 Challenge 1: Security Audit
-Identify and patch several production-level security bugs:
-- **Credential Logging**: Find where raw user passwords are logged in plain text.
-- **Leaky Token Signature**: Audit how JWTs are signed, stored, and verified.
-- **SQL Injection**: Locate the search input vulnerable to SQL injection and rewrite it using parameterized queries.
-- **Bypassed Authorization**: Find the admin action endpoint that fails to enforce actual role authorizations.
+### 1. Install Workspace Dependencies
+Installs dependencies simultaneously in root, frontend, and backend packages:
+```bash
+chmod +x setup.sh
+./setup.sh
+```
 
-### ⚡ Challenge 2: Backend Performance & Concurrency
-Analyze and optimize backend logic:
-- **N+1 Database Queries**: Identify the endpoint fetching core list elements but executing separate queries per row in a loop.
-- **Event-Loop Blocking**: Locate sequential async database queries where parallel triggers should be utilized.
-- **Slow aggregation endpoint**: Fix the slow nested report endpoint that locks the event loop.
-- **Check-in Token Race Condition**: Find why concurrent direct check-ins assign duplicate token numbers and patch it using transaction locks or auto-increment sequences.
+### 2. Configure Environment variables
+Create a `.env` in `backend/`:
+```env
+DATABASE_URL="postgresql://<user>:<password>@localhost:5432/haqms?schema=public"
+JWT_SECRET="your_highly_secure_production_secret_key"
+NODE_ENV="production"
+```
 
-### 💾 Challenge 3: Database & Schema Optimization
-Refactor DB layers:
-- **Schema Vulnerabilities**: Locate the missing constraints that permit double-booking the same physician at the exact same millisecond slot.
-- **Missing Indices**: Add appropriate indices to speed up foreign key relationships and status filters under load.
-- **Paging Optimization**: Fix the listing route that performs in-memory pagination slicing instead of SQL pagination.
+### 3. Setup Database Schema & Seed Data
+Execute Prisma migrations and seed the PostgreSQL database:
+```bash
+npm run db:setup --prefix backend
+```
 
-### 🖥️ Challenge 4: Frontend Memory & React Optimization
-Examine frontend React components:
-- **Severe Memory Leak**: Navigate to the Live Public Queue Board (`/queue`). Mount and unmount it repeatedly. Find the leak in `src/app/queue/page.js` and patch it.
-- **Unnecessary Re-renders**: Optimize search input fields that trigger complete list re-renders on every single keystroke.
-- **NULL Value Application Crash**: Log in as a Doctor (`doctor1@haqms.com`), click on one of the patients with a blank medical history (e.g., Clark Kent or Bruce Wayne), and diagnose why the entire React app crashes on rendering.
-
-### 🏗️ Challenge 5: Incomplete Feature Delivery
-- **Resolve styled 404 error**: Clicking "View Diagnostic Reports Details (Legacy App)" on a patient profile triggers a 404 page. Your final task is to build out that missing page (`src/app/patients/[id]/history-records/page.js`) to fetch and render the patient clinical record.
+### 4. Boot the Platform
+Launches Next.js (port `3000`) and the API Gateway (port `5000`) concurrently:
+```bash
+npm run dev
+```
 
 ---
 
-Good luck! You will be evaluated based on the cleanliness, correctness, efficiency, and safety of your refactoring.
+## 🌐 Production Deployment
+
+The production-ready build is fully optimized and deployed across professional cloud infrastructure:
+- **Frontend Web Application**: Deployed and served with low latency via **Vercel** at the live URL: [haqms-p7pl8eqzt-abhay-choudharys-projects-a85ba84e.vercel.app](https://haqms-p7pl8eqzt-abhay-choudharys-projects-a85ba84e.vercel.app/)
+- **API Gateway & Backend Services**: Deployed and configured for continuous delivery via **Render**.
+- **Production Database**: Hosted on **Supabase** using a managed PostgreSQL cluster.
+- **Connection Pooling & Compatibility**: Integrated Supabase's **Session Pooler** (`port 5432` with `?pgbouncer=true` query parameters) in the Render environment configuration. This resolves IPv6 connection limits on IPv4 cloud servers while managing high-throughput connection limits under load.
+
